@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.venv/
+.venv*/
+
+# 插件运行时回退目录（正常情况下数据在 AstrBot/data/plugin_data 下）
+_data/
+
+# 本地打包产物
+dist/
+*.zip
+
+# 系统文件
+.DS_Store
+Thumbs.db

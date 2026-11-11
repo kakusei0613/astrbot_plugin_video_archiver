@@ -1,0 +1,17 @@
+{
+  "metadata": {
+    "display_name": "Video Archiver",
+    "short_desc": "Auto-save parsed videos/images from whitelisted users to local disk",
+    "desc": "Works with ParseVideo (astrbot_plugin_api_video_parser): saves each parsed video or image set locally before it is sent to QQ. Features whitelist, target directory, path templates and archive history."
+  },
+  "views": {
+    "settings": {
+      "title": "Archive Settings"
+    }
+  },
+  "pages": {
+    "settings": {
+      "title": "Archive Settings"
+    }
+  }
+}

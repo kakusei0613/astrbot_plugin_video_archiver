@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>视频解析自动归档</title>
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+  <div class="page">
+    <header class="hero">
+      <div class="hero-main">
+        <div class="logo" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 3v10" />
+            <path d="m8 9 4 4 4-4" />
+            <path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3" />
+          </svg>
+        </div>
+        <div>
+          <h1>视频解析自动归档</h1>
+          <p class="sub">解析成功后、发送给 QQ 之前，把视频 / 图集另存到本机</p>
+        </div>
+      </div>
+      <div class="chips" id="status-chips">
+        <span class="chip" id="chip-enabled">读取中…</span>
+        <span class="chip" id="chip-parser">解析插件检测中</span>
+      </div>
+    </header>
+
+    <div id="load-error" class="card error-card hidden">
+      <b>页面加载失败</b>
+      <p id="load-error-text"></p>
+      <button class="btn" id="retry-btn">重试</button>
+    </div>
+
+    <main id="content" class="hidden">
+      <section class="card">
+        <div class="card-head">
+          <h2>运行状态</h2>
+          <span class="badge" id="version-badge">v1.0.0</span>
+        </div>
+        <label class="switch-row">
+          <span class="switch"><input type="checkbox" id="enabled" /><i></i></span>
+          <span class="switch-text">
+            <b>启用自动归档</b>
+            <small>关闭后不再保存新内容，已有的文件和记录不受影响</small>
+          </span>
+        </label>
+        <div class="status-grid">
+          <div class="stat"><span class="stat-label">解析插件</span><span class="stat-value" id="parser-state">—</span></div>
+          <div class="stat"><span class="stat-label">已保存</span><span class="stat-value" id="stat-saved">0</span></div>
+          <div class="stat"><span class="stat-label">占用空间</span><span class="stat-value" id="stat-bytes">0 B</span></div>
+          <div class="stat"><span class="stat-label">失败 / 跳过</span><span class="stat-value" id="stat-fail">0 / 0</span></div>
+        </div>
+        <p class="hint" id="parser-hint"></p>
+      </section>
+
+      <section class="card">
+        <div class="card-head">
+          <h2>白名单</h2>
+          <span class="badge" id="wl-count">0 人</span>
+        </div>
+        <p class="hint">只有名单里的用户发送链接才会自动保存。QQ（OneBot / NapCat）填 QQ 号；QQ 官方机器人填 SID / openid。</p>
+        <div class="row">
+          <input id="wl-id" class="input mono" placeholder="QQ 号 / SID，例如 123456789" maxlength="128" />
+          <input id="wl-note" class="input" placeholder="备注（可选），例如 我自己" maxlength="60" />
+          <button class="btn primary" id="wl-add">添加</button>
+        </div>
+        <div class="table-wrap">
+          <table class="table">
+            <thead>
+              <tr><th>用户 ID</th><th>备注</th><th class="col-act">操作</th></tr>
+            </thead>
+            <tbody id="wl-body"></tbody>
+          </table>
+        </div>
+        <div class="row row-end">
+          <button class="btn ghost small" id="wl-import">从最近归档记录导入</button>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-head"><h2>保存位置</h2></div>
+        <div class="row">
+          <input id="save-dir" class="input mono" placeholder="~/Videos/AstrBot" />
+          <button class="btn" id="test-dir">测试目录</button>
+        </div>
+        <div id="dir-result" class="inline-note hidden"></div>
+        <p class="hint">
+          支持以 <code>~</code> 开头。目录不存在时会在保存时自动创建。
+          如果 AstrBot 运行在 Docker 里，请填<strong>容器内路径</strong>，并把宿主机目录挂载进容器。
+        </p>
+      </section>
+
+      <section class="card">
+        <div class="card-head"><h2>命名模板</h2></div>
+        <input id="template" class="input mono" maxlength="400" placeholder="[作者]/[标题]_[日期]" />
+        <div class="chips preset-chips" id="preset-chips"></div>
+        <div class="chips tag-chips" id="placeholder-chips"></div>
+        <div class="preview">
+          <div class="preview-head"><span>效果预览</span><span class="muted">示例数据</span></div>
+          <code id="preview-path">—</code>
+          <div id="preview-warn" class="warn hidden"></div>
+        </div>
+        <details class="help">
+          <summary>模板说明</summary>
+          <ul>
+            <li>用 <code>/</code> 分隔目录层级。例如 <code>[作者]/[标题]_[日期]</code> 会生成 <code>作者文件夹/标题_日期.mp4</code>。</li>
+            <li>点击上方占位符可插入到光标位置；方括号以外的文字会原样保留。</li>
+            <li>文件后缀会自动补全；如果模板里写了 <code>[后缀]</code>，就不再自动追加。</li>
+            <li>文件名里的非法字符会被替换成 <code>_</code>；同名文件默认自动加 <code>_2</code>、<code>_3</code>。</li>
+            <li>平台识别不出来时 <code>[视频平台]</code> 为空，不影响其它占位符。</li>
+            <li>图集有多张时，如果模板里没有 <code>[序号]</code>，会自动在文件名后追加 <code>_01</code>、<code>_02</code>。</li>
+          </ul>
+        </details>
+      </section>
+
+      <section class="card">
+        <div class="card-head">
+          <h2>高级选项</h2>
+          <button class="btn ghost small" id="toggle-advanced" aria-expanded="true">收起</button>
+        </div>
+        <div id="advanced-body">
+          <div class="grid2">
+            <label class="switch-row compact">
+              <span class="switch"><input type="checkbox" id="save-video" /><i></i></span>
+              <span class="switch-text"><b>保存视频</b><small>视频解析成功时存档</small></span>
+            </label>
+            <label class="switch-row compact">
+              <span class="switch"><input type="checkbox" id="save-album" /><i></i></span>
+              <span class="switch-text"><b>保存图集</b><small>图文 / 图集逐张存档</small></span>
+            </label>
+            <label class="switch-row compact">
+              <span class="switch"><input type="checkbox" id="overwrite" /><i></i></span>
+              <span class="switch-text"><b>覆盖同名文件</b><small>关闭时自动追加 _2、_3</small></span>
+            </label>
+            <label class="switch-row compact">
+              <span class="switch"><input type="checkbox" id="skip-duplicate" /><i></i></span>
+              <span class="switch-text"><b>跳过已保存链接</b><small>同一链接只存一次</small></span>
+            </label>
+          </div>
+          <div class="grid2">
+            <label class="field">
+              <span>单个文件名长度上限</span>
+              <input id="max-len" class="input" type="number" min="20" max="200" step="1" />
+            </label>
+            <label class="field">
+              <span>保留历史记录条数</span>
+              <input id="history-limit" class="input" type="number" min="10" max="1000" step="10" />
+            </label>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-head">
+          <h2>最近归档</h2>
+          <div class="row row-tight">
+            <button class="btn ghost small" id="history-refresh">刷新</button>
+            <button class="btn ghost small danger" id="history-clear">清空</button>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table class="table history-table">
+            <thead>
+              <tr><th>时间</th><th>发送者</th><th>平台</th><th>标题</th><th>文件</th><th>状态</th></tr>
+            </thead>
+            <tbody id="history-body"></tbody>
+          </table>
+        </div>
+        <p class="hint" id="history-hint">只记录白名单用户且真正触发保存的条目。</p>
+      </section>
+    </main>
+
+    <div class="savebar">
+      <span class="dirty" id="dirty-hint"></span>
+      <button class="btn ghost" id="reset">恢复默认</button>
+      <button class="btn primary" id="save">保存设置</button>
+    </div>
+  </div>
+
+  <div id="modal" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-card">
+      <p id="modal-text"></p>
+      <div class="modal-actions">
+        <button class="btn ghost" id="modal-cancel">取消</button>
+        <button class="btn primary" id="modal-ok">确定</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <script type="module" src="./app.js"></script>
+</body>
+</html>

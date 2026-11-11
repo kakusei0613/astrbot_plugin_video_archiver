@@ -1,0 +1,39 @@
+name: astrbot_plugin_video_archiver
+display_name: 视频解析自动归档
+short_desc: 白名单用户解析成功的视频/图集自动存档到本机，目录与命名模板可自定义
+desc: |
+  配合「ParseVideo 视频图集解析」(astrbot_plugin_api_video_parser) 使用：
+  白名单用户发送视频/图集链接后，解析插件调用 parse-video-py 解析并下载媒体，
+  本插件在结果交给 QQ 机器人发送之前，把同一份文件另存到本机指定目录。
+  不重复调用解析接口、不二次下载视频；支持自定义保存目录、多级命名模板
+  （[作者]/[标题]/[日期]/[视频平台]/[原视频URL] 等占位符）、白名单管理与归档记录，
+  所有设置都可以在 AstrBot WebUI 的插件管理页面中完成。
+author: kakusei
+version: 1.0.0
+repo: https://github.com/your-name/astrbot_plugin_video_archiver
+support_platforms:
+  - aiocqhttp
+  - qq_official
+  - qq_official_webhook
+  - telegram
+  - wecom
+  - wecom_ai_bot
+  - lark
+  - dingtalk
+  - discord
+  - slack
+  - kook
+  - satori
+  - misskey
+  - line
+  - matrix
+  - mattermost
+  - weixin_oc
+  - weixin_official_account
+astrbot_version: ">=4.17"
+tags:
+  - 视频解析
+  - 图集解析
+  - 自动保存
+  - 归档
+  - 抖音
